@@ -1,0 +1,2 @@
+[console_scripts]
+sticky = ss_player.main:main

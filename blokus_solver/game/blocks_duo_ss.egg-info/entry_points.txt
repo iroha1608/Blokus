@@ -1,0 +1,2 @@
+[console_scripts]
+start_blocksduo = blocks_duo.GameMaster:main

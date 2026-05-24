@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: blocks_duo_Penguin
+Version: 0.0.1
+Summary: Here's an algorithm to counteract the opponent's moves.
+Author: Penguin
+Classifier: Programming Language :: Python :: 3.8
+Requires-Dist: setuptools==69.5.1
+Requires-Dist: websockets==12.0
+Requires-Dist: numpy==1.26.4
+Dynamic: author
+Dynamic: classifier
+Dynamic: requires-dist
+Dynamic: summary

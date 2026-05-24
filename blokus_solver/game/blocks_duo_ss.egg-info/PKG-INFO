@@ -1,0 +1,18 @@
+Metadata-Version: 2.4
+Name: blocks_duo_ss
+Version: 0.0.1
+Summary: smartscape blocks-duo package
+Author: Yoshitomi
+Classifier: Programming Language :: Python :: 3.8
+Requires-Dist: certifi==2024.2.2
+Requires-Dist: charset-normalizer==3.3.2
+Requires-Dist: idna==3.7
+Requires-Dist: numpy==1.26.4
+Requires-Dist: requests==2.31.0
+Requires-Dist: setuptools==69.5.1
+Requires-Dist: urllib3==2.2.1
+Requires-Dist: websockets==12.0
+Dynamic: author
+Dynamic: classifier
+Dynamic: requires-dist
+Dynamic: summary
