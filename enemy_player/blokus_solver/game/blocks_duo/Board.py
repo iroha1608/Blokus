@@ -1,9 +1,9 @@
 from __future__ import annotations
 import numpy as np
 
-from blocks_duo.Block import Block
-from blocks_duo.Player import Player
-from blocks_duo.Position import Position
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.Block import Block
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.Player import Player
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.Position import Position
 
 EmptyChar = '.'
 Player1Char = 'o'
@@ -29,7 +29,7 @@ class Board:
     @property
     def shape_y(self) -> int:
         return self.__board.shape[0]
-    
+
     def get_point(self, player: Player) -> int:
         score = 0
         if len(player.usable_blocks()) == 0:

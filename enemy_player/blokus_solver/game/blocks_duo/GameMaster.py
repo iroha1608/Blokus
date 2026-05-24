@@ -5,17 +5,17 @@ import sys
 from enum import IntEnum
 from typing import Tuple, Optional
 
-from blocks_duo.BattleRecord import BattleRecord
-from blocks_duo.Block import Block
-from blocks_duo.BlockType import BlockType
-from blocks_duo.Board import Board
-from blocks_duo.FinishedReason import FinishedReason
-from blocks_duo.GameFinishedException import GameFinishedException
-from blocks_duo.Player import Player
-from blocks_duo.PlayerFactory import PlayerFactory
-from blocks_duo.Position import Position
-from blocks_duo.View import View
-from blocks_duo.WebsocketServer import WebsocketServer
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.BattleRecord import BattleRecord
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.Block import Block
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.BlockType import BlockType
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.Board import Board
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.FinishedReason import FinishedReason
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.GameFinishedException import GameFinishedException
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.Player import Player
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.PlayerFactory import PlayerFactory
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.Position import Position
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.View import View
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.WebsocketServer import WebsocketServer
 
 TIMEOUT_SEC = 10
 
@@ -52,7 +52,7 @@ class Master:
     @property
     def board(self) -> Board:
         return self.__board
-    
+
     @property
     def mode(self) -> str:
         return self.__mode
@@ -179,7 +179,7 @@ class Master:
             return self.player1 if loser.player_number == 2 else self.player2
         else:
             return self.get_winner_player()
-    
+
     def get_winner_player(self) -> Optional[Player]:
         p1_point = self.board.get_point(self.player1)
         p2_point = self.board.get_point(self.player2)

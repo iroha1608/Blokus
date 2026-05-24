@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 from typing import Optional
 
-from blocks_duo.Player import Player
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.Player import Player
 
 
 class BattleRecord:

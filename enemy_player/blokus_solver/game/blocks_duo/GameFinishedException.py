@@ -1,5 +1,5 @@
-from blocks_duo.FinishedReason import FinishedReason
-from blocks_duo.Player import Player
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.FinishedReason import FinishedReason
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.Player import Player
 
 
 class GameFinishedException(Exception):

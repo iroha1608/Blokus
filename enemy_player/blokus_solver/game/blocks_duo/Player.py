@@ -2,14 +2,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Tuple, Optional
 from websockets import WebSocketServerProtocol
 
-from blocks_duo.Block import Block
-from blocks_duo.BlockRotation import BlockRotation
-from blocks_duo.BlockType import BlockType
-from blocks_duo.Position import Position
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.Block import Block
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.BlockRotation import BlockRotation
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.BlockType import BlockType
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.Position import Position
 
 if TYPE_CHECKING:
-    from Board import Board
-    from blocks_duo.BattleRecord import BattleRecord
+    from Blokus.enemy_player.blokus_solver.game.blocks_duo.Board import Board
+    from Blokus.enemy_player.blokus_solver.game.blocks_duo.BattleRecord import BattleRecord
 
 
 class Player:
@@ -29,11 +29,11 @@ class Player:
     @property
     def player_number(self) -> int:
         return self.__player_number
-    
+
     @property
     def player_name(self) -> str:
         return self.__player_name
-    
+
     @property
     def active(self) -> bool:
         return self.__active
@@ -73,6 +73,6 @@ class Player:
         if block.block_type not in self.__usable_blocks:
             raise ValueError("passed block is not usable.")
         self.__usable_blocks.remove(block.block_type)
-    
+
     def usable_blocks(self) -> list[BlockType]:
         return self.__usable_blocks
