@@ -3,8 +3,8 @@ import subprocess
 import asyncio
 import websockets
 
-from blocks_duo.Player import Player
-from blocks_duo.WebsocketServer import WebsocketServer
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.Player import Player
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.WebsocketServer import WebsocketServer
 
 
 class PlayerFactory:

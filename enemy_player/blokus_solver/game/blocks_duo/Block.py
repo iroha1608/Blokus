@@ -1,7 +1,7 @@
 import numpy as np
 
-from blocks_duo.BlockType import BlockType
-from blocks_duo.BlockRotation import BlockRotation
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.BlockType import BlockType
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.BlockRotation import BlockRotation
 
 
 class Block:

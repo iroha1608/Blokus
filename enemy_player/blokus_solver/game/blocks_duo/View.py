@@ -3,9 +3,9 @@ from typing import Optional
 
 import requests
 
-from blocks_duo.Board import Board
-from blocks_duo.FinishedReason import FinishedReason
-from blocks_duo.Player import Player
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.Board import Board
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.FinishedReason import FinishedReason
+from Blokus.enemy_player.blokus_solver.game.blocks_duo.Player import Player
 
 
 class View:
@@ -87,4 +87,3 @@ class View:
     @staticmethod
     async def view_wait(wait: int = 1):
         await asyncio.sleep(wait)
-        
