@@ -234,20 +234,52 @@ class BlockType(Enum):
 
 # もらった盤面を2次元配列に変換する ==================done
 def make_matrix(board):
-    l = 0
-    new = ""
-    for char in board:
-        if char in ('.', 'o', 'x', '\n'):
-            new += str(char)
-    if new.startswith('\n'):
-        new = new[1:]
-    if new.endswith('\n'):
-        new = new[:-1]
-    board_list = new.split(sep='\n')
-    board_matrix = [[char for char in string] for string in board_list]
+    # １行ごとの文字列の配列に変換
+    lines = board.splitlines()
+    # 1行目は列番号なので除外する
+    board_lines = lines[1:]
+    # 空のリスト
+    board_matrix = []
+    for line in board_lines:
+        # 各行の先頭1文字は行番号なので除外する
+        cells = line[1:]
+        # 文字列を1文字ずつのリストに変換する
+        row = list(cells)
+        # matrixに１行（リスト）を追加
+        board_matrix.append(row)
     return board_matrix
 # ===============================================
 
+# 2次元配列の盤面を集合(SET)に変換する ==================done
+def build_board_sets(board_matrix, player_number):
+    # 自分と相手の記号を定義
+    if player_number == 1:
+        my_mark = 'o'
+        ene_mark = 'x'
+    else:
+        my_mark = 'x'
+        ene_mark = 'o'
+    # 空の集合を準備
+    my_cells = set()
+    ene_cells = set()
+    empty_cells = set()
+    # 文字種ごとに集合に追加
+    BOARD_SIZE = 14
+    for y in range(BOARD_SIZE):
+        for x in range(BOARD_SIZE):
+            cell = board_matrix[y][x]
+
+            if cell == my_mark:
+                my_cells.add((x, y))
+            elif cell == opp_mark:
+                ene_cells.add((x, y))
+            elif cell == '.':
+                empty_cells.add((x, y))
+    return {
+        "my_cells": my_cells,
+        "opp_cells": ene_cells,
+        "empty_cells": empty_cells,
+    }
 
 # 反則でない手を全列挙する関数 ===============================
 # 長いので階層構造に注意して読んでください。

@@ -2,7 +2,7 @@ from __future__ import annotations
 import asyncio
 import websockets
 
-from .util import make_matrix, get_ok_cases
+from .util import make_matrix, get_ok_cases, build_board_sets
 from .strategies import dicide_hand
 
 class PlayerClient:
@@ -44,7 +44,15 @@ class PlayerClient:
     def create_action(self, board):
         # 盤面文字列を2次元配列へ変換
         next_grid = make_matrix(board)
+        board_sets = build_board_sets(
+            board_matrix=next_grid,
+            player_number=self.player_number,
+        )
 
+        print("turn:", self.turn)
+        print("my_cells:", len(board_sets["my_cells"]))
+        print("ene_cells:", len(board_sets["ene_cells"]))
+        print("empty_cells:", len(board_sets["empty_cells"]))
         # 反則でない手を全列挙
         ok_cases, tmp = get_ok_cases(
             next_grid=next_grid,
