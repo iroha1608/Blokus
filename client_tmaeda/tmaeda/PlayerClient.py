@@ -2,16 +2,29 @@ from __future__ import annotations
 import asyncio
 import websockets
 
+from .util import make_matrix, get_ok_cases
+from .strategies import dicide_hand
 
 class PlayerClient:
     def __init__(self, player_number: int, socket: websockets.WebSocketClientProtocol, loop: asyncio.AbstractEventLoop):
         self._loop = loop
+
+        #ソケット(出入り口)
+        #ここから入力し、ここに出力するイメージ。使い方の詳細はもともとのプログラム参照。もしくはドキュメント。
         self._socket = socket
+
+        # 先行の場合は1, 後攻の場合は2 ??
+        # 要確認。説明スライドではスライドではこう言ってただけ。
         self._player_number = player_number
-        self.p1Actions = ['U034', 'J267', 'B037','M149', 'O763', 'R0A3', 'F0C6', 'K113', 'T021', 'L5D2', 'G251', 'E291', 'D057', 'A053']
-        self.p2Actions = ['A0AA', 'B098', 'N0A5', 'L659', 'K33B', 'J027', 'E2B9', 'C267', 'U07C', 'M3AD', 'O2BB', 'R41C']
-        self.p1turn = 0
-        self.p2turn = 0
+
+        # 自分の手番数
+        self.turn = 0
+
+        # 自分の残りピース
+        self.my_hands = [chr(ord("A") + i) for i in range(21)]
+
+        # 相手の残りピース。現時点では未使用
+        self.ene_hands = [chr(ord("A") + i) for i in range(21)]
 
     @property
     def player_number(self) -> int:
@@ -29,32 +42,41 @@ class PlayerClient:
                 raise SystemExit
 
     def create_action(self, board):
-        if not hasattr(self, "_debug_board_printed"):
-            self._debug_board_printed = True
-            print("board type:", type(board))
-            print("board repr:", repr(board))
-            print("board lines:", len(board.splitlines()))
-            for i, line in enumerate(board.splitlines()):
-                print(i, repr(line), len(line))
+        # 盤面文字列を2次元配列へ変換
+        next_grid = make_matrix(board)
 
-        actions: list[str]
-        turn: int
+        # 反則でない手を全列挙
+        ok_cases, tmp = get_ok_cases(
+            next_grid=next_grid,
+            player_number=self.player_number,
+            turn=self.turn,
+            my_hands=self.my_hands,
+        )
 
-        if self.player_number == 1:
-            actions = self.p1Actions
-            turn = self.p1turn
-            self.p1turn += 1
-        else:
-            actions = self.p2Actions
-            turn = self.p2turn
-            self.p2turn += 1
-
-        if len(actions) > turn:
-            return actions[turn]
-        else:
-            # パスを選択
+        # 置ける手がなければパス
+        if len(ok_cases) == 0:
+            self.turn += 1
             return 'X000'
-    
+
+        # ヒューリスティックで手を選択
+        this_turn_hand = dicide_hand(
+            board_matrix=next_grid,
+            ok_cases=ok_cases,
+            tmp=tmp,
+            player_number=self.player_number,
+            turn=self.turn,
+        )
+
+        # 選択したピースを手札から削除
+        if this_turn_hand != 'X000':
+            self.my_hands.remove(this_turn_hand[0])
+
+        # 次の手番に備えて手番数を進める
+        self.turn += 1
+
+        return this_turn_hand
+
+
     @staticmethod
     async def create(url: str, loop: asyncio.AbstractEventLoop) -> PlayerClient:
         socket = await websockets.connect(url)
