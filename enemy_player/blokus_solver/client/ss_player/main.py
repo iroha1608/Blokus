@@ -1,7 +1,7 @@
 import asyncio
 import sys
 
-from Blokus.enemy_player.blokus_solver.client.ss_player.PlayerClient import PlayerClient
+from .PlayerClient import PlayerClient
 
 
 def main():
