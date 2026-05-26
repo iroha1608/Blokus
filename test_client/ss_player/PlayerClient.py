@@ -11,8 +11,10 @@ START_POS = {1: (4, 4), 2: (9, 9)}
 SIDE_DIRS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 DIAG_DIRS = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
 ALL_PIECE_NAMES = list('ABCDEFGHIJKLMNOPQRSTU')
-MCTS_TIME_LIMIT = 13.0
+MCTS_TIME_LIMIT = 8.0
 MAX_MCTS_DEPTH = 2
+BEAM_ROOT = 24
+BEAM_INNER = 14
 
 PIECE_SHAPES = {
     'A': [[1]],
@@ -148,6 +150,37 @@ def _get_corner_candidates(board, player):
     return {(r, c) for r, c in corners - sides - my_cells if board[r][c] == 0}
 
 
+def _get_territory(board, cc):
+    if not cc:
+        return set()
+    reached = set(cc)
+    frontier = cc
+    for _ in range(2):
+        nxt = set()
+        for r, c in frontier:
+            for dr in range(-1, 2):
+                for dc in range(-1, 2):
+                    if dr == 0 and dc == 0:
+                        continue
+                    nr, nc = r + dr, c + dc
+                    if (0 <= nr < BOARD_SIZE and 0 <= nc < BOARD_SIZE
+                            and board[nr][nc] == 0 and (nr, nc) not in reached):
+                        nxt.add((nr, nc))
+                        reached.add((nr, nc))
+        frontier = nxt
+    return reached
+
+
+def _score_move(move, opp_cc):
+    pname, rv, col, row = move
+    size = PIECE_SIZES[pname]
+    for orv, _, _, cells, _ in ORIENTATIONS[pname]:
+        if orv == rv:
+            blocks = sum(1 for cr, cc in cells if (row + cr, col + cc) in opp_cc)
+            return size * 5.0 + blocks * 2.5
+    return size * 5.0
+
+
 def _get_legal_moves(board, player, available_pieces, is_first):
     if is_first:
         sr, sc = START_POS[player]
@@ -213,10 +246,37 @@ def _evaluate(board, my_player, my_pieces, opp_pieces):
     opp_player = 3 - my_player
     my_score = _count_cells(board, my_player)
     opp_score = _count_cells(board, opp_player)
-    my_cc = len(_get_corner_candidates(board, my_player))
-    opp_cc = len(_get_corner_candidates(board, opp_player))
-    score = (my_score - opp_score) + 0.3 * (my_cc - opp_cc)
-    return 1.0 / (1.0 + math.exp(-score / 8.0))
+    my_cc = _get_corner_candidates(board, my_player)
+    opp_cc = _get_corner_candidates(board, opp_player)
+    my_cc_n = len(my_cc)
+    opp_cc_n = len(opp_cc)
+
+    reach = 0.0
+    if my_cc_n <= 2:
+        reach -= (3 - my_cc_n) ** 2
+    if opp_cc_n <= 2:
+        reach += (3 - opp_cc_n) ** 2
+
+    my_terr = _get_territory(board, my_cc)
+    opp_terr = _get_territory(board, opp_cc)
+    terr_diff = len(my_terr - opp_terr) - len(opp_terr - my_terr)
+
+    raw = (1.0 * (my_score - opp_score)
+           + 0.6 * (my_cc_n - opp_cc_n)
+           + 2.0 * reach
+           + 0.25 * terr_diff)
+    return 1.0 / (1.0 + math.exp(-raw / 8.0))
+
+
+def _adjust_depths(node, offset):
+    node.depth -= offset
+    if (node.depth < MAX_MCTS_DEPTH
+            and not node.children
+            and node.untried_moves is not None
+            and len(node.untried_moves) == 0):
+        node.untried_moves = None
+    for child in node.children:
+        _adjust_depths(child, offset)
 
 
 class _MCTSNode:
@@ -250,11 +310,23 @@ class _MCTSNode:
             self.untried_moves = []
             return
         if self.is_my_turn:
-            moves = _get_legal_moves(self.board, self.my_player, self.my_pieces, self.is_first_me)
+            player = self.my_player
+            moves = _get_legal_moves(self.board, player,
+                                     self.my_pieces, self.is_first_me)
         else:
-            opp = 3 - self.my_player
-            moves = _get_legal_moves(self.board, opp, self.opp_pieces, self.is_first_opp)
-        random.shuffle(moves)
+            player = 3 - self.my_player
+            moves = _get_legal_moves(self.board, player,
+                                     self.opp_pieces, self.is_first_opp)
+        existing = {ch.move for ch in self.children}
+        moves = [m for m in moves if m not in existing]
+        if moves:
+            opp_cc = _get_corner_candidates(self.board, 3 - player)
+            scored = [(_score_move(m, opp_cc), m) for m in moves]
+            scored.sort(key=lambda x: -x[0])
+            beam = BEAM_ROOT if self.depth == 0 else BEAM_INNER
+            remaining = max(1, beam - len(existing))
+            moves = [m for _, m in scored[:remaining]]
+            random.shuffle(moves)
         self.untried_moves = moves
 
     def is_fully_expanded(self):
@@ -300,7 +372,8 @@ class _MCTSNode:
         return max(self.children, key=ucb1)
 
     def rollout(self):
-        return _evaluate(self.board, self.my_player, self.my_pieces, self.opp_pieces)
+        return _evaluate(self.board, self.my_player,
+                         self.my_pieces, self.opp_pieces)
 
     def backpropagate(self, value):
         self.visits += 1
@@ -310,15 +383,21 @@ class _MCTSNode:
 
 
 def _mcts_search(board, my_player, my_pieces, opp_pieces,
-                 is_first_me, is_first_opp, time_limit=MCTS_TIME_LIMIT):
-    root = _MCTSNode(board, my_player, my_pieces, opp_pieces,
-                     True, is_first_me, is_first_opp)
+                 is_first_me, is_first_opp,
+                 reuse_root=None, time_limit=MCTS_TIME_LIMIT):
+    if reuse_root is not None:
+        root = reuse_root
+        print(f'Tree reuse: {root.visits} visits carried over, '
+              f'{len(root.children)} children')
+    else:
+        root = _MCTSNode(board, my_player, my_pieces, opp_pieces,
+                         True, is_first_me, is_first_opp)
     root._init_moves()
 
-    if not root.untried_moves:
-        return None
-    if len(root.untried_moves) == 1:
-        return root.untried_moves[0]
+    if not root.untried_moves and not root.children:
+        return None, None
+    if not root.children and len(root.untried_moves) == 1:
+        return root.untried_moves[0], root
 
     start = time.time()
     iterations = 0
@@ -340,12 +419,12 @@ def _mcts_search(board, my_player, my_pieces, opp_pieces,
     print(f'MCTS: {iterations} iterations, {elapsed:.2f}s')
 
     if not root.children:
-        return root.untried_moves[0] if root.untried_moves else None
+        return (root.untried_moves[0] if root.untried_moves else None), root
 
     best = max(root.children, key=lambda c: c.visits)
     print(f'Best: {best.move}, visits={best.visits}, '
           f'wr={best.wins / best.visits:.3f}')
-    return best.move
+    return best.move, root
 
 
 class PlayerClient:
@@ -358,6 +437,7 @@ class PlayerClient:
         self._my_pieces = list(ALL_PIECE_NAMES)
         self._opp_pieces = list(ALL_PIECE_NAMES)
         self._prev_board = None
+        self._mcts_root = None
 
     @property
     def player_number(self) -> int:
@@ -386,14 +466,18 @@ class PlayerClient:
         opp = 3 - self._player_number
         is_first_opp = _count_cells(board, opp) == 0
 
-        move = _mcts_search(
+        reuse_root = self._try_reuse_tree(board)
+
+        move, root = _mcts_search(
             board, self._player_number,
             self._my_pieces, self._opp_pieces,
-            is_first_me, is_first_opp
+            is_first_me, is_first_opp,
+            reuse_root=reuse_root
         )
 
         if move is None:
             self._prev_board = _copy_board(board)
+            self._mcts_root = None
             return 'X000'
 
         pname, rv, col, row = move
@@ -402,9 +486,32 @@ class PlayerClient:
             board, self._player_number, pname, rv, col, row
         )
 
+        self._save_subtree(root, move)
+
         x_hex = format(col + 1, 'X')
         y_hex = format(row + 1, 'X')
         return f'{pname}{rv}{x_hex}{y_hex}'
+
+    def _save_subtree(self, root, move):
+        if root is None:
+            self._mcts_root = None
+            return
+        for child in root.children:
+            if child.move == move:
+                child.parent = None
+                self._mcts_root = child
+                return
+        self._mcts_root = None
+
+    def _try_reuse_tree(self, board):
+        if self._mcts_root is None:
+            return None
+        for child in self._mcts_root.children:
+            if child.board == board:
+                child.parent = None
+                _adjust_depths(child, child.depth)
+                return child
+        return None
 
     def _init_opponent(self, board):
         opp = 3 - self._player_number
