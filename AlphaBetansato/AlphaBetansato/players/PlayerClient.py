@@ -2,8 +2,8 @@ from __future__ import annotations
 import asyncio
 import websockets
 
-from .util import make_matrix, get_ok_cases
-from .strategies import dicide_hand
+from AlphaBetansato.game_logic.util import make_matrix, get_ok_cases
+from AlphaBetansato.players.strategies import dicide_hand
 
 class PlayerClient:
     def __init__(self, player_number: int, socket: websockets.WebSocketClientProtocol, loop: asyncio.AbstractEventLoop):
@@ -42,43 +42,36 @@ class PlayerClient:
                 raise SystemExit
 
     def create_action(self, board):
-        # 盤面文字列を2次元配列へ変換
+        # 現在の盤面を配列へ変換
         next_grid = make_matrix(board)
 
-        # 反則でない手を全列挙
+        # 打てる手の取得
         ok_cases, tmp = get_ok_cases(
             next_grid=next_grid,
             player_number=self.player_number,
             turn=self.turn,
             my_hands=self.my_hands,
         )
-
         # 置ける手がなければパス
         if len(ok_cases) == 0:
             self.turn += 1
             return 'X000'
 
-        # ヒューリスティックで手を選択
-        this_turn_hand = dicide_hand(
-            board_matrix=next_grid,
-            ok_cases=ok_cases,
-            tmp=tmp,
-            player_number=self.player_number,
-            turn=self.turn,
-        )
+        # 継承クラスのロジックで最適解取得
+        best_action = self.best_hand(next_grid, ok, case, tmp)
+        # 選択したピースを削除
+        if best_action != 'X000':
+            self.my_hands.remove(bast_action[0])
 
-        # 選択したピースを手札から削除
-        if this_turn_hand != 'X000':
-            self.my_hands.remove(this_turn_hand[0])
-
-        # 次の手番に備えて手番数を進める
         self.turn += 1
-
         return this_turn_hand
 
 
-    @staticmethod
-    async def create(url: str, loop: asyncio.AbstractEventLoop) -> PlayerClient:
+    # staticmethod -> classmethod
+    @classmethod
+    async def create(
+        url: str, loop: asyncio.AbstractEventLoop
+    ) -> PlayerClient:
         socket = await websockets.connect(url)
         print('PlayerClient: connected')
         player_number = await socket.recv()

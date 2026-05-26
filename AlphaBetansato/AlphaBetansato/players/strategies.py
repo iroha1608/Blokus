@@ -1,7 +1,7 @@
 import random
 import numpy as np
 
-from .util import BlockType
+from AlphaBetansato.game_logic.util import BlockType
 
 # ===============================================
 # FIXME: 人力でベストらしい選択をしているだけ

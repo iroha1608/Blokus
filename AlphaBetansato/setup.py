@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 with open('requirements.txt') as requirements_file:
     install_requirements = requirements_file.read().splitlines()
-TEAM_NAME = "datou_nsato"  # チーム名に書き換えてください
+TEAM_NAME = "AlphaBetansato"  # チーム名に書き換えてください
 setup(
     name=TEAM_NAME,
     version="1.0.0",
