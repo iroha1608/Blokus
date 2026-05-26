@@ -2,7 +2,7 @@ from __future__ import annotations
 import asyncio
 import websockets
 
-from .util import make_matrix, get_ok_cases, build_board_sets
+from .util import make_matrix, build_board_sets, get_ok_cases_by_sets #, get_ok_cases
 from .strategies import dicide_hand
 
 class PlayerClient:
@@ -49,16 +49,19 @@ class PlayerClient:
             player_number=self.player_number,
         )
 
-        print("turn:", self.turn)
-        print("my_cells:", len(board_sets["my_cells"]))
-        print("ene_cells:", len(board_sets["ene_cells"]))
-        print("empty_cells:", len(board_sets["empty_cells"]))
         # 反則でない手を全列挙
-        ok_cases, tmp = get_ok_cases(
-            next_grid=next_grid,
+        # ok_cases, tmp = get_ok_cases(
+        #     next_grid=next_grid,
+        #     player_number=self.player_number,
+        #     turn=self.turn,
+        #     my_hands=self.my_hands,
+        # )
+         # 反則でない手を全列挙
+        ok_cases, tmp = get_ok_cases_by_sets(
+            board_sets=board_sets,
+            my_hands=self.my_hands,
             player_number=self.player_number,
             turn=self.turn,
-            my_hands=self.my_hands,
         )
 
         # 置ける手がなければパス
@@ -73,6 +76,7 @@ class PlayerClient:
             tmp=tmp,
             player_number=self.player_number,
             turn=self.turn,
+            board_sets=board_sets,
         )
 
         # 選択したピースを手札から削除

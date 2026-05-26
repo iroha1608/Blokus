@@ -255,9 +255,25 @@ def more_corner_piece(better_cases) -> str:
 
     return better_cases
 
+# 一つの手に対しスコアをつける関数 ==================yet
+def score_action(action, board_matrix, board_sets, player_number, turn):
+    score = 0
+    piece = action[0]
+    score += piece_size_score(piece)
+    return score
+
+# ピースのsizeに対しスコアをつける関数 ==================yet
+def piece_size_score(piece):
+    size = BlockType(piece).size
+    if size == 5:
+        return 16
+    elif size == 4:
+        return 10
+    else:
+        return size * 2
 
 # ヒューリスティックに良い手を選ぶ関数 ==================yet
-def dicide_hand(board_matrix, ok_cases, tmp, player_number, turn) -> str:
+def dicide_hand(board_matrix, ok_cases, tmp, player_number, turn, board_sets) -> str:
     better_cases_1 = []
     better_cases_2 = []
     better_cases_3 = []
