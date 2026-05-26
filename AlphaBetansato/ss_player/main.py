@@ -1,7 +1,7 @@
 import asyncio
 import sys
 
-from .PlayerClient import PlayerClient
+from ss_player.PlayerClient import PlayerClient
 
 
 def main():
