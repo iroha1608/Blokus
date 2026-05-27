@@ -9,9 +9,12 @@ class PlayerClient:
     def __init__(self, player_number: int, socket: websockets.WebSocketClientProtocol, loop: asyncio.AbstractEventLoop):
         self._loop = loop
 
+        #ソケット(出入り口)
+        #ここから入力し、ここに出力するイメージ。使い方の詳細はもともとのプログラム参照。もしくはドキュメント。
         self._socket = socket
 
-        # 先行の場合は1, 後攻の場合は2
+        # 先行の場合は1, 後攻の場合は2 ??
+        # 要確認。説明スライドではスライドではこう言ってただけ。
         self._player_number = player_number
 
         # 自分の手番数
@@ -46,6 +49,13 @@ class PlayerClient:
             player_number=self.player_number,
         )
 
+        # 反則でない手を全列挙
+        # ok_cases, tmp = get_ok_cases(
+        #     next_grid=next_grid,
+        #     player_number=self.player_number,
+        #     turn=self.turn,
+        #     my_hands=self.my_hands,
+        # )
          # 反則でない手を全列挙
         ok_cases, tmp = get_ok_cases_by_sets(
             board_sets=board_sets,

@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any
 import numpy as np
 
-# ピースの形状を定義するクラス gameディレクトリよりコピー==========================done
+# ピースの形状を定義するクラス ==========================done
 class BlockType(Enum):
     A = 'A'
     B = 'B'
@@ -455,34 +455,234 @@ def get_ok_cases_by_sets(board_sets, my_hands, player_number, turn):
 
     return ok_cases, tmp
 
-def make_next_board_sets(action, board_sets):
-    if action == "X000":
-        return board_sets
-    piece = action[0]
-    rf = int(action[1])
-    x = int(action[2], 16) - 1
-    y = int(action[3], 16) - 1
 
-    # actionから、実際に置かれるピースの座標集合を作る
-    piece_cells = make_piece_cells(piece, rf, x, y)
+# # ===============================================
 
-    # ピースを置いた後の基本集合を作る
-    next_my_cells = board_sets["my_cells"] | piece_cells
-    next_empty_cells = board_sets["empty_cells"] - piece_cells
-    next_ene_cells = board_sets["ene_cells"]
-    # 自分と相手のNGセル、角セルの座標集合を作成
-    next_my_ng_cells = make_ng_cells(next_my_cells, next_empty_cells)
-    next_ene_ng_cells = make_ng_cells(next_ene_cells, next_empty_cells)
-    next_my_corner_cells = make_corner_cells(next_my_cells, next_empty_cells, next_my_ng_cells)
-    next_ene_corner_cells = make_corner_cells(next_ene_cells, next_empty_cells, next_ene_ng_cells)
+# # 反則でない手を全列挙する関数 ===============================
+# # 長いので階層構造に注意して読んでください。
+# def get_ok_cases(next_grid, player_number, turn, my_hands) -> tuple[list[str], list]:
+#     # 置けるますに対して、置ける手を全列挙する。
+#     # 反則でないもののみをlistにappendしていく。
+#     # そのリストを返す。
 
-    return {
-        "my_cells": next_my_cells,
-        "ene_cells": next_ene_cells,
-        "empty_cells": next_empty_cells,
-        "my_ng_cells": next_my_ng_cells,
-        "ene_ng_cells": next_ene_ng_cells,
-        "my_corner_cells": next_my_corner_cells,
-        "ene_corner_cells": next_ene_corner_cells,
-    }
+#     # 反則判定の関数 ========================================
+#     # 完全に反則でない手の場合のみ、Trueを返す関数
+#     # もちろん、反則はFalseを返す。
+#     def is_ok(next_grid, piece_map, i, j, a, b) -> bool:
 
+#         # ===== ピースの重なり判定=========================
+#         def is_dup(next_grid, piece_map, i, j, a, b) -> bool:
+#             for p in range(piece_map.shape[0]):
+#                 for q in range(piece_map.shape[1]):
+#                     if piece_map[p][q] == 1:
+#                         if (
+#                             next_grid[i - a + p][j - b + q] == 'o'
+#                             or next_grid[i - a + p][j - b + q] == 'x'
+#                         ):
+#                             return True
+#             return False
+
+#         # ===== ピースの盤面外判定 ========================
+#         def is_out(next_grid, piece_map, i, j, a, b) -> bool:
+#             for p in range(piece_map.shape[0]):
+#                 for q in range(piece_map.shape[1]):
+#                     if piece_map[p][q] == 1:
+#                         if i - a + p < 0 or i - a + p > 13 or j - b + q < 0 or j - b + q > 13:
+#                             return True
+#             return False
+
+#         # ===== ピースの隣接判定 ==========================yet
+#         def is_neighbor(next_grid, piece_map, i, j, a, b) -> bool:
+#             if player_number == 1:
+#                 block = 'o'
+#             else:
+#                 block = 'x'
+
+#             grid_size = len(next_grid)
+#             for p in range(piece_map.shape[0]):
+#                 for q in range(piece_map.shape[1]):
+#                     if piece_map[p][q] == 1:
+#                         r = i - a + p
+#                         c = j - b + q
+
+#                         # Skip if r or c is out of the grid bounds
+#                         if r < 0 or r >= grid_size or c < 0 or c >= grid_size:
+#                             continue
+
+#                         # Check corners and edges separately
+#                         if r == 0 and c == 0:
+#                             if next_grid[r + 1][c] == block or next_grid[r][c + 1] == block:
+#                                 return True
+#                         elif r == 0 and c == grid_size - 1:
+#                             if next_grid[r + 1][c] == block or next_grid[r][c - 1] == block:
+#                                 return True
+#                         elif r == grid_size - 1 and c == 0:
+#                             if next_grid[r - 1][c] == block or next_grid[r][c + 1] == block:
+#                                 return True
+#                         elif r == grid_size - 1 and c == grid_size - 1:
+#                             if next_grid[r - 1][c] == block or next_grid[r][c - 1] == block:
+#                                 return True
+#                         elif r == 0:
+#                             if (
+#                                 next_grid[r][c + 1] == block
+#                                 or next_grid[r + 1][c] == block
+#                                 or next_grid[r][c - 1] == block
+#                             ):
+#                                 return True
+#                         elif r == grid_size - 1:
+#                             if (
+#                                 next_grid[r - 1][c] == block
+#                                 or next_grid[r][c + 1] == block
+#                                 or next_grid[r][c - 1] == block
+#                             ):
+#                                 return True
+#                         elif c == 0:
+#                             if (
+#                                 next_grid[r - 1][c] == block
+#                                 or next_grid[r][c + 1] == block
+#                                 or next_grid[r + 1][c] == block
+#                             ):
+#                                 return True
+#                         elif c == grid_size - 1:
+#                             if (
+#                                 next_grid[r - 1][c] == block
+#                                 or next_grid[r + 1][c] == block
+#                                 or next_grid[r][c - 1] == block
+#                             ):
+#                                 return True
+#                         else:
+#                             if (
+#                                 next_grid[r - 1][c] == block
+#                                 or next_grid[r][c + 1] == block
+#                                 or next_grid[r + 1][c] == block
+#                                 or next_grid[r][c - 1] == block
+#                             ):
+#                                 return True
+
+#             return False
+
+#         # 以下、この関数のフロー
+#         # 最初に盤面外判定をしておかないと、他の場面で安心して検証ができない。
+#         # next_grid をインデックスアウトしないようにするために。
+#         if is_out(next_grid, piece_map, i, j, a, b):
+#             return False
+
+#         if is_dup(next_grid, piece_map, i, j, a, b):
+#             # 敵のピースでも自分のピースでも、重なってはいけないことに注意
+#             return False
+
+#         if is_neighbor(next_grid, piece_map, i, j, a, b):
+#             # すでに置かれている「自分の」ピースと辺で隣接してしまう場合
+#             return False
+
+#         return True
+
+#     # 情報から、手の文字列を生成する関数 =======================yet
+#     # i, j と、本当に報告すべき座標は異なる。計算が必要。
+#     def get_ok_string(piece, rf, i, j, a, b) -> str:
+#         I = i - a + 1
+#         J = j - b + 1
+
+#         if I >= 10:
+#             I = chr(ord('A') + I - 10)
+#         if J >= 10:
+#             J = chr(ord('A') + J - 10)
+
+#         return piece + str(rf) + str(J) + str(I)
+
+#     def is_corner(i, j) -> bool:
+#         if player_number == 1:
+#             block = 'o'
+#         else:
+#             block = 'x'
+
+#         if i == 0 and j == 0:
+#             if next_grid[1][1] == block:
+#                 return True
+#             return False
+
+#         if i == 0 and j == 13:
+#             if next_grid[1][12] == block:
+#                 return True
+#             return False
+
+#         if i == 13 and j == 0:
+#             if next_grid[12][1] == block:
+#                 return True
+#             return False
+
+#         if i == 13 and j == 13:
+#             if next_grid[12][12] == block:
+#                 return True
+#             return False
+
+#         if i == 0:
+#             if next_grid[1][j - 1] == block or next_grid[1][j + 1] == block:
+#                 return True
+#             return False
+
+#         if i == 13:
+#             if next_grid[12][j - 1] == block or next_grid[12][j + 1] == block:
+#                 return True
+#             return False
+
+#         if j == 0:
+#             if next_grid[i - 1][1] == block or next_grid[i + 1][1] == block:
+#                 return True
+#             return False
+
+#         if j == 13:
+#             if next_grid[i - 1][12] == block or next_grid[i + 1][12] == block:
+#                 return True
+#             return False
+
+#         if (
+#             next_grid[i - 1][j - 1] == block
+#             or next_grid[i - 1][j + 1] == block
+#             or next_grid[i + 1][j - 1] == block
+#             or next_grid[i + 1][j + 1] == block
+#         ):
+#             return True
+
+#         return False
+
+#     ok_cases = []
+#     tmp = []
+
+#     for i in range(14):
+#         for j in range(14):
+#             cell = next_grid[i][j]
+
+#             # 一つずつマスを見ていく
+#             # もし置けるマスであれば、そのマスに対して全ての手を試す
+#             if (
+#                 is_corner(i, j)
+#                 or (player_number == 1 and turn == 0 and i == 4 and j == 4)
+#                 or (player_number == 2 and turn == 0 and i == 9 and j == 9)
+#             ):
+#                 for piece in my_hands:
+#                     for rf in range(8):  # rotate & flip
+#                         piece_map_origin = BlockType(piece)
+#                         piece_map = piece_map_origin.block_map
+
+#                         if rf == 0 or rf == 1:
+#                             pass
+#                         elif rf == 2 or rf == 3:
+#                             piece_map = np.rot90(piece_map, 3).copy()
+#                         elif rf == 4 or rf == 5:
+#                             piece_map = np.rot90(piece_map, 2).copy()
+#                         elif rf == 6 or rf == 7:
+#                             piece_map = np.rot90(piece_map, 1).copy()
+
+#                         if rf % 2 == 1:
+#                             piece_map = np.fliplr(piece_map)
+
+#                         for a in range(piece_map.shape[0]):
+#                             for b in range(piece_map.shape[1]):
+#                                 if piece_map[a][b] == 1:
+#                                     if is_ok(next_grid, piece_map, i, j, a, b):
+#                                         ok_string = get_ok_string(piece, rf, i, j, a, b)
+#                                         ok_cases.append(ok_string)
+#                                         tmp.append([ok_string, piece, rf, i, j, a, b, piece_map])
+
+#     return ok_cases, tmp

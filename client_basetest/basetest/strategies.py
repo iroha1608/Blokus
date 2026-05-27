@@ -1,7 +1,7 @@
 import random
 import numpy as np
 
-from .util import BlockType, make_next_board_sets
+from .util import BlockType
 
 # ===============================================
 # FIXME: 人力でベストらしい選択をしているだけ
@@ -164,7 +164,105 @@ def jamming_piece(board_matrix, ok_cases, player_number) -> str:
     better_cases = better_jammers(opponent_start_positions, ok_cases)
     return better_cases
 
-# 評価関数　ピースのsizeに対しスコアをつける ==================yet
+
+# NOTE: ピースの大きさを優先する
+def big_piece(better_cases) -> str:
+    better_cases_w_size = {}
+
+    for cs in better_cases:
+        # NOTE: pieceを正しい向きで取得する
+        piece = str(cs[0])
+        rf = int(cs[1])
+
+        if cs[2] in ['A', 'B', 'C', 'D', 'E']:
+            j = ord(cs[2]) - 55 - 1
+        else:
+            j = int(cs[2]) - 1
+
+        if cs[3] in ['A', 'B', 'C', 'D', 'E']:
+            i = ord(cs[3]) - 55 - 1
+        else:
+            i = int(cs[3]) - 1
+
+        piece_map_origin = BlockType(piece)
+        piece_map = piece_map_origin.block_map
+
+        if rf == 0 or rf == 1:
+            pass
+        elif rf == 2 or rf == 3:
+            piece_map = np.rot90(piece_map, 3).copy()
+        elif rf == 4 or rf == 5:
+            piece_map = np.rot90(piece_map, 2).copy()
+        elif rf == 6 or rf == 7:
+            piece_map = np.rot90(piece_map, 1).copy()
+
+        if rf % 2 == 1:
+            piece_map = np.fliplr(piece_map)
+
+        size_count = 0
+        for p in range(piece_map.shape[0]):
+            for q in range(piece_map.shape[1]):
+                if piece_map[p][q] == 1:
+                    size_count += 1
+
+        better_cases_w_size[cs] = size_count
+
+    max_value = max(better_cases_w_size.values())
+
+    # 最大値を持つキーのリストを作成する
+    return [k for k, v in better_cases_w_size.items() if v == max_value]
+
+
+# TODO: 次に置ける角の数を優先
+def more_corner_piece(better_cases) -> str:
+    selected_cases = [case for case in better_cases if 'U' in case]
+    if len(selected_cases) > 0:
+        return selected_cases
+
+    selected_cases.extend([case for case in better_cases if 'T' in case or 'R' in case])
+    if len(selected_cases) > 0:
+        return selected_cases
+
+    selected_cases.extend(
+        [
+            case
+            for case in better_cases
+            if 'S' in case
+            or 'P' in case
+            or 'O' in case
+            or 'I' in case
+            or 'L' in case
+            or 'G' in case
+        ]
+    )
+    if len(selected_cases) > 0:
+        return selected_cases
+
+    selected_cases.extend(
+        [
+            case
+            for case in better_cases
+            if 'Q' in case
+            or 'N' in case
+            or 'M' in case
+            or 'K' in case
+            or 'F' in case
+            or 'D' in case
+        ]
+    )
+    if len(selected_cases) > 0:
+        return selected_cases
+
+    return better_cases
+
+# 一つの手に対しスコアをつける関数 ==================yet
+def score_action(action, board_matrix, board_sets, player_number, turn):
+    score = 0
+    piece = action[0]
+    score += piece_size_score(piece)
+    return score
+
+# ピースのsizeに対しスコアをつける関数 ==================yet
 def piece_size_score(piece):
     size = BlockType(piece).size
     if size == 5:
@@ -174,66 +272,26 @@ def piece_size_score(piece):
     else:
         return size * 2
 
-# 評価関数　ピースの角の数に対しスコアをつける ==================yet
-def piece_priority_score(piece):
-    if piece == "U":
-        return 40
-    elif piece in ["T", "R"]:
-        return 30
-    elif piece in ["S", "P", "O", "I", "L", "G"]:
-        return 20
-    elif piece in ["Q", "N", "M", "K", "F", "D"]:
-        return 10
-    else:
-        return 0
-
-# 評価関数　自分角の数の増加数をスコアとする ==================yet
-def my_corner_score(board_sets, next_board_sets):
-    my_corner_gain = (
-        len(next_board_sets["my_corner_cells"])
-        - len(board_sets["my_corner_cells"])
-    )
-    return my_corner_gain 
-
-# 評価関数　相手の角の数の減少数をスコアとする ==================yet
-def ene_corner_score(board_sets, next_board_sets):
-    ene_corner_reduce = (
-        len(board_sets["ene_corner_cells"])
-        - len(next_board_sets["ene_corner_cells"])
-    )
-    return ene_corner_reduce
-
-# すべての手に対してスコアを付ける関数 ==================yet
-def score_actions(actions, board_matrix, board_sets, player_number, turn):
-    scored_actions = []
-
-    for action in actions:
-        score = 0
-        piece = action[0]
-        # 次の盤面を作成
-        next_board_sets = make_next_board_sets(action, board_sets)
-        # 評価関数を適用
-        score += piece_size_score(piece) * 1
-        score += my_corner_score(board_sets, next_board_sets) * 1
-        score += ene_corner_score(board_sets, next_board_sets) * 2
-        scored_actions.append((action, score))
-
-    return scored_actions
-
-
-# スコアが最大の手を選ぶ関数 ==================yet
-def select_best_scored_actions(scored_actions):
+def select_best_action(actions, board_matrix, board_sets, player_number, turn):
     best_score = None
     best_actions = []
 
-    for action, score in scored_actions:
-        if (best_score is None) or (score > best_score):
+    for action in actions:
+        score = score_action(
+            action,
+            board_matrix,
+            board_sets,
+            player_number,
+            turn,
+        )
+
+        if best_score is None or score > best_score:
             best_score = score
             best_actions = [action]
         elif score == best_score:
             best_actions.append(action)
 
-    return best_actions
+    return random.choice(best_actions)
 
 # ヒューリスティックに良い手を選ぶ関数 ==================yet
 def dicide_hand(board_matrix, ok_cases, tmp, player_number, turn, board_sets) -> str:
@@ -246,21 +304,22 @@ def dicide_hand(board_matrix, ok_cases, tmp, player_number, turn, board_sets) ->
     better_cases_1 = nearest_piece(ok_cases, player_number, turn)
 
     # 妨害フィルタ
-    candidate_cases = jamming_piece(board_matrix, better_cases_1, player_number)
+    better_cases_2 = jamming_piece(board_matrix, better_cases_1, player_number)
 
-    # better_cases_3 = big_piece(better_cases_2)
-    # candidate_cases = more_corner_piece(candidate_cases)
+    better_cases_3 = big_piece(better_cases_2)
+    better_cases_4 = more_corner_piece(better_cases_3)
 
-    # 各手に点数を付ける
-    scored_actions = score_actions(
-        candidate_cases,
-        board_matrix,
-        board_sets,
-        player_number,
-        turn,
-    )
-    candidate_cases = select_best_scored_actions(scored_actions)
+    # # 各手に点数を付ける
+    # scored_actions = score_actions(
+    #     candidate_cases,
+    #     board_matrix,
+    #     board_sets,
+    #     player_number,
+    #     turn,
+    # )
 
-    # 残ったものからランダムチョイス
-    return random.choice(candidate_cases)
+    id = random.randrange(len(better_cases_4))
+    return better_cases_4[id]
+
+    # return choose_best_action(scored_actions)
 
