@@ -8,7 +8,9 @@ from AlphaBetansato.game_logic.util import make_matrix, get_ok_cases
 
 class BasePlayer():
     def __init__(
-        self, player_number: int, socket: websockets.WebSocketClientProtocol,
+        self,
+        player_number: int,
+        socket: websockets.WebSocketClientProtocol,
         loop: asyncio.AbstractEventLoop
     ) -> None:
         # loop
@@ -35,6 +37,10 @@ class BasePlayer():
         await self._socket.close()
 
     async def play(self):
+        """
+            mainで実行される。
+            socketから盤面を受け取り、手を返す。
+        """
         while True:
             board = await self._socket.recv()
             action = self.create_action(board)
@@ -42,12 +48,16 @@ class BasePlayer():
             if action == 'X000':
                 raise SystemExit
 
-    def create_action(self, board):
-        # 現在の盤面を配列へ変換
+    def create_action(self, board: list[str]) -> str:
+        """
+            Args:
+                board: socketから送られてくる
+        """
+        # 現在の盤面を二次元配列へ変換
         next_grid = make_matrix(board)
 
         # 打てる手の取得
-        # list[str], list
+        # list[str], list[list[Any]]
         ok_cases, tmp = get_ok_cases(
             next_grid=next_grid,
             player_number=self.player_number,
@@ -69,7 +79,7 @@ class BasePlayer():
         return best_hand
 
     def get_best_hand(
-        self, board_matrix: list[list[int]],
+        self, board_matrix: list[list[str]],
         ok_case: list[str], tmp: list
     ) -> str:
         pass
@@ -79,8 +89,9 @@ class BasePlayer():
     async def create(
         cls, url: str, loop: asyncio.AbstractEventLoop
     ) -> BasePlayer:
+        """インスタンス作成時に一度のみ使用。"""
         socket = await websockets.connect(url)
-        print('Player: connected')
+        print(f'{cls.__name__}Player: connected')
         player_number = await socket.recv()
         print(f'player_number: {player_number}')
         return cls(int(player_number), socket, loop)
