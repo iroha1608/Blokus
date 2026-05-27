@@ -1,6 +1,6 @@
 import random
 
-from AlphaBetansato.players.base_player import BasePlayer
+from AlphaBetansato.players.BasePlayer import BasePlayer
 
 
 class RandomPlayer(BasePlayer):
