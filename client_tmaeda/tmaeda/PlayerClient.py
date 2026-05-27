@@ -3,15 +3,18 @@ import asyncio
 import websockets
 
 from .util import make_matrix, build_board_sets, get_ok_cases_by_sets #, get_ok_cases
-from .strategies import dicide_hand
+from .strategies import decide_hand
 
 class PlayerClient:
     def __init__(self, player_number: int, socket: websockets.WebSocketClientProtocol, loop: asyncio.AbstractEventLoop):
         self._loop = loop
 
+        #ソケット(出入り口)
+        #ここから入力し、ここに出力するイメージ。使い方の詳細はもともとのプログラム参照。もしくはドキュメント。
         self._socket = socket
 
-        # 先行の場合は1, 後攻の場合は2
+        # 先行の場合は1, 後攻の場合は2 ??
+        # 要確認。説明スライドではスライドではこう言ってただけ。
         self._player_number = player_number
 
         # 自分の手番数
@@ -46,7 +49,7 @@ class PlayerClient:
             player_number=self.player_number,
         )
 
-         # 反則でない手を全列挙
+         # 反則でない手を全列挙 by set
         ok_cases, tmp = get_ok_cases_by_sets(
             board_sets=board_sets,
             my_hands=self.my_hands,
@@ -59,8 +62,8 @@ class PlayerClient:
             self.turn += 1
             return 'X000'
 
-        # ヒューリスティックで手を選択
-        this_turn_hand = dicide_hand(
+        # 手を選択
+        this_turn_hand = decide_hand(
             board_matrix=next_grid,
             ok_cases=ok_cases,
             tmp=tmp,
@@ -73,7 +76,7 @@ class PlayerClient:
         if this_turn_hand != 'X000':
             self.my_hands.remove(this_turn_hand[0])
 
-        # 次の手番に備えて手番数を進める
+        # 手番数を１進める
         self.turn += 1
 
         return this_turn_hand

@@ -421,6 +421,7 @@ def get_unique_rfs(piece):
 
     return unique_rfs
 
+# ピース形状ごとのユニーク回転パターン配列表を定数化
 UNIQUE_RFS = {
     piece: get_unique_rfs(piece)
     for piece in "ABCDEFGHIJKLMNOPQRSTU"
