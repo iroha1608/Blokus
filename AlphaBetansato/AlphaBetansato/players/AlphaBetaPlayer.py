@@ -63,14 +63,14 @@ class AlphaBetaPlayer(BasePlayer):
             weight_area = 1.0
             weight_my_corners = 2.5
             weight_ene_corners = 2.0
-        elif self.turn < 9:
+        elif self.turn < 12:
             weight_area = 1.0
             weight_my_corners = 2.0
             weight_ene_corners = 2.5
         else:
-            weight_area = 1.5
-            weight_my_corners = 1.5
-            weight_ene_corners = 1.3
+            weight_area = 2.5
+            weight_my_corners = 1.0
+            weight_ene_corners = 2.0
 
         my_score = (my_area * weight_area) + (my_corners * weight_my_corners)
         ene_score = (ene_area * weight_area) + (ene_corners * weight_ene_corners)
