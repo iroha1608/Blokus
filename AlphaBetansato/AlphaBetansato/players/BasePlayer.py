@@ -15,8 +15,7 @@ class BasePlayer():
     ) -> None:
         # loop
         self._loop = loop
-        # 出入り口
-        # ここから入力し、ここに出力するイメージ。
+        # ここから入力し、ここに出力する。
         # 使い方の詳細はもともとのプログラム参照。もしくはドキュメント。
         self._socket = socket
 
@@ -56,9 +55,8 @@ class BasePlayer():
         # 現在の盤面を二次元配列へ変換
         next_grid = make_matrix(board)
 
-        # 打てる手の取得
-        # list[str], list[list[Any]]
-        ok_cases, tmp = get_ok_cases(
+        # 現在の盤面から、有効手の取得
+        ok_cases: list[str], tmp: list[list[Any]] = get_ok_cases(
             next_grid=next_grid,
             player_number=self.player_number,
             turn=self.turn,
@@ -69,7 +67,7 @@ class BasePlayer():
             self.turn += 1
             return 'X000'
 
-        # 継承クラスのロジックで最適解取得
+        # 継承クラスのget_best_handで最適解取得
         best_hand: str = self.get_best_hand(next_grid, ok_cases, tmp)
         # 選択したピースを削除(1moji me)
         if best_hand != 'X000':
@@ -82,9 +80,13 @@ class BasePlayer():
         self, board_matrix: list[list[str]],
         ok_case: list[str], tmp: list
     ) -> str:
+        """
+            BasePlayerクラスを継承したクラスが実装するクラス。
+            ABCを継承して強制するかは保留。
+        """
         pass
 
-    # staticmethod -> classmethod, hukusuu tukuru node
+    # 複数プレイヤー作成するためstaticmethod -> classmethodに変更。
     @classmethod
     async def create(
         cls, url: str, loop: asyncio.AbstractEventLoop
