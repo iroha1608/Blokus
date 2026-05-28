@@ -1,5 +1,5 @@
 """
-    make_matrix, get_ok_casesを提供。
+    make_matrix(), get_ok_cases()を提供。
 """
 from enum import Enum
 from typing import Any
@@ -9,10 +9,7 @@ from AlphaBetansato.game_logic.BlockType import BlockType
 
 
 def make_matrix(board) -> list[list[str]]:
-    """
-        もらった盤面を2次元配列に変換する。
-    """
-    l = 0
+    """socketから返ってきた盤面を二次元配列に変換する。"""
     new = ""
     for char in board:
         if char in ('.', 'o', 'x', '\n'):
@@ -23,6 +20,7 @@ def make_matrix(board) -> list[list[str]]:
         new = new[:-1]
     board_list = new.split(sep='\n')
     board_matrix = [[char for char in string] for string in board_list]
+
     return board_matrix
 
 def get_ok_cases(
@@ -30,28 +28,25 @@ def get_ok_cases(
     player_number: int,
     turn: int,
     my_hands: list[str]
-) -> tuple[list[str], list]:
+) -> tuple[list[str], list[list[Any]]]:
     """
-        反則でない手を全列挙する関数。
-        置けるマスに対し置ける手を全列挙し、
+        有効手を全列挙する関数。
+        置けるマスに対し置ける手を全列挙、
         反則でない手のみlistに追加、そのリストを返す。
-        最初に盤面外判定 -> 他の場面でも安心して検証できる。
-        is_corner() -> is_ok() -> get_ok_string()
+        最初に盤面外判定実行 -> 他の場面でも安心して検証できる。
+        is_corner(ブロックの角) -> is_ok(反則判定) -> get_ok_string(文字列生成)
 
         Args:
-            next_grid:
-            player_number:
-            turn:
-            my_hands:
+            next_grid: 現在の盤面
+            player_number: 先行=1, 後攻=2
+            turn: 現在のターン
+            my_hands: 自分の残りのブロック
         Returns:
             ok_cases list[str]: 合法手のリスト
             tmp list[list[Any]]: 判定結果の保存したリスト
     """
     # is_neighbor()とis_corner()で使用。最初にまとめて処理。
-    if player_number == 1:
-        block = 'o'
-    else:
-        block = 'x'
+    block = 'o' if player_number == 1  else block = 'x'
 
     def is_ok(next_grid, piece_map, i, j, a, b) -> bool:
         """
@@ -168,14 +163,15 @@ def get_ok_cases(
 
         return True
 
-    def get_ok_string(piece, rf, i, j, a, b) -> str:
+    def get_ok_string(piece, rotate_flip, i, j, a, b) -> str:
         """
             情報から手の文字列を生成する関数
             i, j と報告すべき座標が異なるため計算し文字列に変換。
-            piece: ピースのID
-            rf: 回転、反転表参照
-            j: 横座標
-            i: 縦座標
+            Args:
+                piece: ピースのID
+                rotate_flip: 回転、反転表参照
+                j: 横座標
+                i: 縦座標
         """
         J = j - b + 1
         I = i - a + 1
@@ -185,11 +181,14 @@ def get_ok_cases(
         if I >= 10:
             I = chr(ord('A') + I - 10)
 
-        return piece + str(rf) + str(J) + str(I)
+        return piece + str(rotate_flip) + str(J) + str(I)
 
-    def is_corner(i, j) -> bool:
+    def is_corner(i: int, j: int) -> bool:
         """
-            角判定
+            ブロックの角判定
+            Args:
+                j: 横座標
+                i: 縦座標
         """
         if i == 0 and j == 0:
             if next_grid[1][1] == block:
@@ -246,40 +245,53 @@ def get_ok_cases(
     ok_cases: list = []
     tmp: list = []
 
+    # 一つずつマスを見ていく
     for i in range(14):
         for j in range(14):
-            cell = next_grid[i][j]
 
-            # 一つずつマスを見ていく
-            # もし置けるマスであれば、そのマスに対して全ての手を試す
+            # もし置けるマスなら
             if (
                 is_corner(i, j)
                 or (player_number == 1 and turn == 0 and i == 4 and j == 4)
                 or (player_number == 2 and turn == 0 and i == 9 and j == 9)
             ):
+                # そのマスに対して残りの全ての手を試す
                 for piece in my_hands:
-                    for rf in range(8):  # rotate & flip
+                    # np.rot90() -> 反時計回りに90度回転
+                    for rotate_flip in range(8):
                         piece_map_origin = BlockType(piece)
-                        piece_map = piece_map_origin.block_map
+                        piece_map = pice_map_origin.block_map
 
-                        if rf == 0 or rf == 1:
+                        if rotate_flip == 0 or rotate_flip == 1:
                             pass
-                        elif rf == 2 or rf == 3:
+                        elif rotate_flip == 2 or rotate_flip == 3:
                             piece_map = np.rot90(piece_map, 3).copy()
-                        elif rf == 4 or rf == 5:
+                        elif rotate_flip == 4 or rotate_flip == 5:
                             piece_map = np.rot90(piece_map, 2).copy()
-                        elif rf == 6 or rf == 7:
+                        elif rotate_flip == 6 or rotate_flip == 7:
                             piece_map = np.rot90(piece_map, 1).copy()
 
-                        if rf % 2 == 1:
+                        # np.fliplr() -> 左右反転
+                        if rotate_flip % 2 == 1:
                             piece_map = np.fliplr(piece_map)
 
+                        # shape[0]は行数([n][0])
                         for a in range(piece_map.shape[0]):
+                            # shape[1]は列数([0][n])
                             for b in range(piece_map.shape[1]):
                                 if piece_map[a][b] == 1:
+
+                                    # 盤面に置けるとき
                                     if is_ok(next_grid, piece_map, i, j, a, b):
-                                        ok_string = get_ok_string(piece, rf, i, j, a, b)
+                                        # 返却する文字列と
+                                        ok_string = get_ok_string(
+                                            piece, rotate_flip, i, j, a, b
+                                        )
                                         ok_cases.append(ok_string)
-                                        tmp.append([ok_string, piece, rf, i, j, a, b, piece_map])
+                                        # 生の情報も全て返す
+                                        tmp.append([
+                                            ok_string, piece, rotate_flip,
+                                            i, j, a, b, piece_map
+                                        ])
 
     return ok_cases, tmp
