@@ -5,9 +5,9 @@ import sys
 
 # ================= ユーザー設定エリア =================
 # プレイヤー名は `pip install` で登録された console_scripts 名を指定する
-#   - mcts_sec_client            -> "ss_mcts"
+#   - mcts_client                -> "mcts_ai"  (ユニークなパッケージ名で衝突回避)
 #   - enemy_player/blokus_solver -> "sticky"
-AI_1_NAME = "ss_mcts"
+AI_1_NAME = "mcts_ai"
 AI_2_NAME = "sticky"
 TOTAL_MATCHES = 10  # 対戦回数 (1〜49, start_blocksduo の制約)
 MODE = ""           # "view" を指定すると viewer 連携。通常は ""。
@@ -19,7 +19,7 @@ def main():
     for name in (AI_1_NAME, AI_2_NAME, "start_blocksduo"):
         if shutil.which(name) is None:
             print(f"[!] '{name}' コマンドが見つかりません。venv を有効化して以下を実行してください:")
-            print("    pip install ./game ./mcts_sec_client ./enemy_player/blokus_solver/client")
+            print("    pip install ./game ./mcts_client ./enemy_player/blokus_solver/client")
             sys.exit(1)
 
     os.makedirs("logs", exist_ok=True)
