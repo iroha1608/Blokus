@@ -5,7 +5,7 @@ from AlphaBetansato.players.BasePlayer import BasePlayer
 
 class RandomPlayer(BasePlayer):
     def get_best_hand(
-        self, board_matrix: list[list[int]],
+        self, board_matrix: list[list[str]],
         ok_cases: list[str], tmp: list
     ) -> str:
         # seed wo settei sitai toki you

@@ -1,15 +1,13 @@
 import random
 import numpy as np
 
-from AlphaBetansato.game_logic.util import BlockType
+from AlphaBetansato.game_logic.BlockType import BlockType
 
-# ===============================================
-# FIXME: 人力でベストらしい選択をしているだけ
-def nearest_piece(ok_cases, player_number, turn) -> str:
+def nearest_piece(ok_cases, player_number, turn):
     if turn == 0 and player_number == 1:
-        node = 'R455'
+        node = 'R355'
     elif turn == 0 and player_number == 2:
-        node = 'R488'
+        node = 'R388'
     else:
         return ok_cases
 

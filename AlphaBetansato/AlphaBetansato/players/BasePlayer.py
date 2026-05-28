@@ -16,7 +16,6 @@ class BasePlayer():
         # loop
         self._loop = loop
         # ここから入力し、ここに出力する。
-        # 使い方の詳細はもともとのプログラム参照。もしくはドキュメント。
         self._socket = socket
 
         # 先行=1, 後攻=2
@@ -25,7 +24,7 @@ class BasePlayer():
         self.turn = 0
         # 自分の残りピース
         self.my_hands: list[str] = [chr(ord("A") + i) for i in range(21)]
-        # 相手の残りピース。現時点では未使用
+        # 相手の残りピース
         self.ene_hands: list[str] = [chr(ord("A") + i) for i in range(21)]
 
     @property
@@ -52,11 +51,13 @@ class BasePlayer():
             Args:
                 board: socketから送られてくる
         """
+        # ========== make_mattrix, get_ok_case, get_best_hand ==========
+        # ========== make_mattrix, get_ok_case_by_sets, decide_hand ==========
         # 現在の盤面を二次元配列へ変換
         next_grid = make_matrix(board)
 
         # 現在の盤面から、有効手の取得
-        ok_cases: list[str], tmp: list[list[Any]] = get_ok_cases(
+        ok_cases, tmp = get_ok_cases(
             next_grid=next_grid,
             player_number=self.player_number,
             turn=self.turn,

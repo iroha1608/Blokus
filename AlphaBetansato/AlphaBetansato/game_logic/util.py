@@ -46,7 +46,7 @@ def get_ok_cases(
             tmp list[list[Any]]: 判定結果の保存したリスト
     """
     # is_neighbor()とis_corner()で使用。最初にまとめて処理。
-    block = 'o' if player_number == 1  else block = 'x'
+    block = 'o' if player_number == 1  else 'x'
 
     def is_ok(next_grid, piece_map, i, j, a, b) -> bool:
         """
@@ -260,7 +260,7 @@ def get_ok_cases(
                     # np.rot90() -> 反時計回りに90度回転
                     for rotate_flip in range(8):
                         piece_map_origin = BlockType(piece)
-                        piece_map = pice_map_origin.block_map
+                        piece_map = piece_map_origin.block_map
 
                         if rotate_flip == 0 or rotate_flip == 1:
                             pass

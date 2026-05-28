@@ -19,7 +19,7 @@ def apply_move(
 
     _, _, _, i, j, a, b, piece_map = move_data
 
-    block = 'o' if player_number == 1  else block = 'x'
+    block = 'o' if player_number == 1  else 'x'
 
     for p in range(piece_map.shape[0]):
         for q in range(piece_map.shape[1]):
