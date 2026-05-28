@@ -1,56 +1,56 @@
 import os
+import shutil
 import subprocess
-from concurrent.futures import ThreadPoolExecutor
+import sys
 
 # ================= ユーザー設定エリア =================
-AI_1_NAME = "my_player"     # 自分のAIのファイル名（拡張子なし）
-AI_2_NAME = "enemy_player"  # 対戦相手のAIのファイル名（拡張子なし）
-TOTAL_MATCHES = 10          # 対戦回数
+# プレイヤー名は `pip install` で登録された console_scripts 名を指定する
+#   - mcts_sec_client            -> "ss_mcts"
+#   - enemy_player/blokus_solver -> "sticky"
+AI_1_NAME = "ss_mcts"
+AI_2_NAME = "sticky"
+TOTAL_MATCHES = 10  # 対戦回数 (1〜49, start_blocksduo の制約)
+MODE = ""           # "view" を指定すると viewer 連携。通常は ""。
 # =====================================================
 
-def run_single_match(match_number):
-    """1回分の対戦を実行し、それぞれのログを出力"""
-    
-    # ログファイルの保存先を設定 (例: logs/my_player_enemy_player_1.log)
-    log_filename = f"{AI_1_NAME}_{AI_2_NAME}_{match_number}.log"
-    log_filepath = os.path.join("logs", log_filename)
-    
-    with open(log_filepath, "w", encoding="utf-8") as log_file:
-        # with 自動で閉じる write utf-8 文字コード　as 変数名
-        log_file.write(f"=== Match {match_number} Start ===\n\n")
-        
-        # 1. AI_1 (my_player) の実行
-        log_file.write(f"[{AI_1_NAME} Output]\n")
-        # python コマンドでAIのスクリプトを裏で実行
-        result_1 = subprocess.run(["python", f"{AI_1_NAME}.py"], capture_output=True, text=True)
-        log_file.write(result_1.stdout) # AIが画面に出力した内容をログに書き込む
-        if result_1.stderr:
-            log_file.write(f"Error: {result_1.stderr}")
-            
-        log_file.write("\n" + "-"*30 + "\n\n")
-        
-        # 2. AI_2 (enemy_player) の実行
-        log_file.write(f"[{AI_2_NAME} Output]\n")
-        result_2 = subprocess.run(["python", f"{AI_2_NAME}.py"], capture_output=True, text=True)
-        log_file.write(result_2.stdout)
-        if result_2.stderr:
-            log_file.write(f"Error: {result_2.stderr}")
-
-    print(f"[-] マッチ {match_number} の対戦完了。ログを出力しました: {log_filename}")
 
 def main():
-    # ログを保存するフォルダがなければ自動で作る
-    if not os.path.exists("logs"):
-        os.makedirs("logs")
-        
-    print(f"[+] {AI_1_NAME} VS {AI_2_NAME} の並列対戦（計 {TOTAL_MATCHES} 回）を開始します...")
+    # AI コマンドが PATH 上にあるか事前に確認
+    for name in (AI_1_NAME, AI_2_NAME, "start_blocksduo"):
+        if shutil.which(name) is None:
+            print(f"[!] '{name}' コマンドが見つかりません。venv を有効化して以下を実行してください:")
+            print("    pip install ./game ./mcts_sec_client ./enemy_player/blokus_solver/client")
+            sys.exit(1)
 
-    # ThreadPoolExecutor を使って並列（同時）処理
-    with ThreadPoolExecutor() as executor:
-        # 1回目から10回目までの対戦を同時に実行S
-        executor.map(run_single_match, range(1, TOTAL_MATCHES + 1))
+    os.makedirs("logs", exist_ok=True)
+    os.makedirs("log", exist_ok=True)
 
-    print("[+] すべての対戦が終了しました。'logs' フォルダを確認してください。")
+    log_filename = f"{AI_1_NAME}_{AI_2_NAME}_{TOTAL_MATCHES}.log"
+    log_filepath = os.path.join("logs", log_filename)
+
+    cmd = ["start_blocksduo", AI_1_NAME, AI_2_NAME, str(TOTAL_MATCHES)]
+    if MODE:
+        cmd.append(MODE)
+
+    print(f"[+] {AI_1_NAME} VS {AI_2_NAME} を {TOTAL_MATCHES} 回対戦させます...")
+    print(f"    コマンド: {' '.join(cmd)}")
+
+    with open(log_filepath, "w", encoding="utf-8") as log_file:
+        log_file.write(f"=== {AI_1_NAME} vs {AI_2_NAME} : {TOTAL_MATCHES} matches ===\n\n")
+        log_file.flush()
+        # start_blocksduo は内部で複数試合を回し、各試合の JSON ログを `log/` に出力する。
+        # ポート 8088 を共有しているため並列実行はできない (順次実行)。
+        result = subprocess.run(cmd, stdout=log_file, stderr=subprocess.STDOUT, text=True)
+
+    if result.returncode == 0:
+        print(f"[+] 全試合終了。標準出力ログ: {log_filepath}")
+        print(f"    JSON 形式の各試合ログ: log/ 以下を確認してください。")
+        print(f"    集計コマンド例: python3 show_logs.py {AI_1_NAME}_{AI_2_NAME}")
+    else:
+        print(f"[!] start_blocksduo が異常終了しました (returncode={result.returncode})。")
+        print(f"    詳細は {log_filepath} を参照してください。")
+        sys.exit(result.returncode)
+
 
 if __name__ == "__main__":
     main()
