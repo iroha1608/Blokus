@@ -34,6 +34,52 @@ class BlockType(Enum):
     X = 'X'
 
     @property
+    def size(self):
+        """ブロックの大きさを取得するプロパティ"""
+        if self == BlockType.A:
+            return 1
+        elif self == BlockType.B:
+            return 2
+        elif self in (BlockType.C, BlockType.D):
+            return 3
+        elif self in (
+            BlockType.E, BlockType.F, BlockType.G, BlockType.H, BlockType.I
+        ):
+            return 4
+        elif self == BlockType.X:
+            return 0
+        else:
+            return 5
+
+    @property
+    def corner(self):
+        """ブロックの角の数を取得するプロパティ"""
+        if self in (
+            BlockType.A, BlockType.B, BlockType.C, BlockType.E,
+            BlockType.H, BlockType.J
+        ):
+            return 4
+        elif self in (
+            BlockType.D, BlockType.F, BlockType.K, BlockType.M,
+            BlockType.N, BlockType.Q
+        ):
+            return 5
+        elif self in (
+            BlockType.G, BlockType.I, BlockType.L, BlockType.O,
+            BlockType.P, BlockType.S
+        ):
+            return 6
+        elif self in (
+            BlockType.R, BlockType.T
+        ):
+            return 7
+        elif self == BlockType.X:
+            return 0
+        # U
+        else:
+            return 8
+
+    @property
     def block_map(self) -> np.ndarray[Any, np.dtype[int]]:
 
         if self == BlockType.A:
@@ -98,7 +144,7 @@ class BlockType(Enum):
             """
                 type G:
                 ■
-                ■ ■
+                ■  ■
                 ■
                 corner: 6
             """
@@ -137,10 +183,10 @@ class BlockType(Enum):
         elif self == BlockType.K:
             """
                 type K:
-                   ■
-                   ■
-                   ■
-                ■ ■
+                    ■
+                    ■
+                    ■
+                ■  ■
                 corner: 5
             """
             return np.array([[0, 1], [0, 1], [0, 1], [1, 1]])
@@ -148,9 +194,9 @@ class BlockType(Enum):
         elif self == BlockType.L:
             """
                 type L:
-                   ■
-                   ■
-                ■ ■
+                    ■
+                    ■
+                ■  ■
                 ■
                 corner: 6
             """
@@ -159,9 +205,9 @@ class BlockType(Enum):
         elif self == BlockType.M:
             """
                 type M:
-                   ■
-                ■ ■
-                ■ ■
+                    ■
+                ■  ■
+                ■  ■
                 corner: 5
             """
             return np.array([[0, 1], [1, 1], [1, 1]])
@@ -169,9 +215,9 @@ class BlockType(Enum):
         elif self == BlockType.N:
             """
                 type N:
-                ■ ■
+                ■  ■
                 ■
-                ■ ■
+                ■  ■
                 corner: 5
             """
             return np.array([[1, 1], [0, 1], [1, 1]])
@@ -180,7 +226,7 @@ class BlockType(Enum):
             """
                 type O:
                 ■
-                ■ ■
+                ■  ■
                 ■
                 ■
                 corner: 6
@@ -190,9 +236,9 @@ class BlockType(Enum):
         elif self == BlockType.P:
             """
                 type P:
-                ■
-                ■
-                ■ ■ ■
+                    ■
+                    ■
+                ■  ■  ■
                 corner: 6
             """
             return np.array([[0, 1, 0], [0, 1, 0], [1, 1, 1]])
@@ -210,9 +256,9 @@ class BlockType(Enum):
         elif self == BlockType.R:
             """
                 type R:
-                ■ ■
-                   ■ ■
-                      ■
+                ■  ■
+                    ■  ■
+                        ■
                 corner: 7
             """
             return np.array([[1, 1, 0], [0, 1, 1], [0, 0, 1]])
@@ -221,8 +267,8 @@ class BlockType(Enum):
             """
                 type S:
                 ■
-                ■ ■ ■
-                      ■
+                ■  ■  ■
+                        ■
                 corner: 6
             """
             return np.array([[1, 0, 0], [1, 1, 1], [0, 0, 1]])
@@ -231,8 +277,8 @@ class BlockType(Enum):
             """
                 type T:
                 ■
-                ■ ■ ■
-                   ■
+                ■  ■  ■
+                    ■
                 corner: 7
             """
             return np.array([[1, 0, 0], [1, 1, 1], [0, 1, 0]])
@@ -240,9 +286,9 @@ class BlockType(Enum):
         elif self == BlockType.U:
             """
                 type U:
-                   ■
-                ■ ■ ■
-                   ■
+                    ■
+                ■  ■  ■
+                    ■
                 corner: 8
             """
             return np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
