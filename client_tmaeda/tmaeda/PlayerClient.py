@@ -2,8 +2,8 @@ from __future__ import annotations
 import asyncio
 import websockets
 
-from .util import make_matrix, get_ok_cases
-from .strategies import dicide_hand
+from .util import make_matrix, build_board_sets, get_ok_cases_by_sets #, get_ok_cases
+from .strategies import decide_hand
 
 class PlayerClient:
     def __init__(self, player_number: int, socket: websockets.WebSocketClientProtocol, loop: asyncio.AbstractEventLoop):
@@ -44,13 +44,17 @@ class PlayerClient:
     def create_action(self, board):
         # 盤面文字列を2次元配列へ変換
         next_grid = make_matrix(board)
+        board_sets = build_board_sets(
+            board_matrix=next_grid,
+            player_number=self.player_number,
+        )
 
-        # 反則でない手を全列挙
-        ok_cases, tmp = get_ok_cases(
-            next_grid=next_grid,
+         # 反則でない手を全列挙 by set
+        ok_cases, tmp = get_ok_cases_by_sets(
+            board_sets=board_sets,
+            my_hands=self.my_hands,
             player_number=self.player_number,
             turn=self.turn,
-            my_hands=self.my_hands,
         )
 
         # 置ける手がなければパス
@@ -58,20 +62,21 @@ class PlayerClient:
             self.turn += 1
             return 'X000'
 
-        # ヒューリスティックで手を選択
-        this_turn_hand = dicide_hand(
+        # 手を選択
+        this_turn_hand = decide_hand(
             board_matrix=next_grid,
             ok_cases=ok_cases,
             tmp=tmp,
             player_number=self.player_number,
             turn=self.turn,
+            board_sets=board_sets,
         )
 
         # 選択したピースを手札から削除
         if this_turn_hand != 'X000':
             self.my_hands.remove(this_turn_hand[0])
 
-        # 次の手番に備えて手番数を進める
+        # 手番数を１進める
         self.turn += 1
 
         return this_turn_hand
