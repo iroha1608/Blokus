@@ -112,17 +112,22 @@ class AlphaBetaPlayer(BasePlayer):
         if not ok_cases:
             return self.rate_board(board_matrix)
 
-        # 上位10盤面に絞る
-        search_depth = 5
-        combined = list(zip(ok_cases, tmp))
-        combined.sort(key=lambda x: x[1][7].sum(), reverse=True)
-        ok_cases = [x[0] for x in combined[:search_depth]]
-        tmp = [x[1] for x in combined[:search_depth]]
-
         # それぞれが今何ターン目か動的に設定
+        next_player = 2 if current_player == 1 else 1
         next_p1_turn = p1_turn + 1 if current_player == 1 else p1_turn
         next_p2_turn = p2_turn + 1 if current_player == 2 else p2_turn
-        ene_player = 2 if self.player_number == 1 else 1
+
+        # 上位10盤面に絞る
+        search_width = 3
+        scored_moves = []
+        for move_string, move_data in zip(ok_cases, tmp):
+            nb = apply_move(board_matrix, move_data, current_player)
+            score = self.rate_board(nb)
+            scored_moves.append((score, move_string, move_data))
+
+        scored_moves.sort(key=lambda x: x[0], reverse=is_maximizing)
+        ok_cases = [x[1] for x in scored_moves[:search_width]]
+        tmp = [x[2] for x in scored_moves[:search_width]]
 
         if is_maximizing:
             max_rate = -math.inf
@@ -137,7 +142,7 @@ class AlphaBetaPlayer(BasePlayer):
                     alpha=alpha,
                     beta=beta,
                     is_maximizing=False,
-                    current_player=ene_player,
+                    current_player=next_player,
                     my_hands=new_my_hands,
                     ene_hands=ene_hands,
                     p1_turn=next_p1_turn,
@@ -165,7 +170,7 @@ class AlphaBetaPlayer(BasePlayer):
                     alpha=alpha,
                     beta=beta,
                     is_maximizing=True,
-                    current_player=ene_player,
+                    current_player=next_player,
                     my_hands=my_hands,
                     ene_hands=new_ene_hands,
                     p1_turn=next_p1_turn,
@@ -201,19 +206,24 @@ class AlphaBetaPlayer(BasePlayer):
         best_hand = ok_cases[0]
         max_rate = -math.inf
 
-        # 上位10盤面に絞る
-        search_depth = 10
-        combined = list(zip(ok_cases, tmp))
-        combined.sort(key=lambda x: x[1][7].sum(), reverse=True)
-        ok_cases = [x[0] for x in combined[:search_depth]]
-        tmp = [x[1] for x in combined[:search_depth]]
-
         # それぞれが今何ターン目か動的に設定
+        next_player = 2 if self.player_number == 1 else 1
         p1_turn = self.turn if self.player_number == 1 else self.turn + 1
         p2_turn = self.turn if self.player_number == 2 else self.turn
         next_p1_turn = p1_turn + 1 if self.player_number == 1 else p1_turn
         next_p2_turn = p2_turn + 1 if self.player_number == 2 else p2_turn
-        ene_player = 2 if self.player_number == 1 else 1
+
+        # 上位10盤面に絞る
+        search_width = 5
+        scored_moves = []
+        for move_string, move_data in zip(ok_cases, tmp):
+            nb = apply_move(board_matrix, move_data, self.player_number)
+            score = self.rate_board(nb)
+            scored_moves.append((score, move_string, move_data))
+
+        scored_moves.sort(key=lambda x: x[0], reverse=True)
+        ok_cases = [x[1] for x in scored_moves[:search_width]]
+        tmp = [x[2] for x in scored_moves[:search_width]]
 
         for move_string, move_data in zip(ok_cases, tmp):
             new_board = apply_move(board_matrix, move_data, self.player_number)
@@ -226,7 +236,7 @@ class AlphaBetaPlayer(BasePlayer):
                 alpha=alpha,
                 beta=beta,
                 is_maximizing=False,
-                current_player=ene_player,
+                current_player=next_player,
                 my_hands=new_my_hands,
                 ene_hands=self.ene_hands,
                 p1_turn=next_p1_turn,
