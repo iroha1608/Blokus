@@ -13,8 +13,8 @@ import asyncio
 
 from AlphaBetansato.players.PlayerClient import PlayerClient
 from AlphaBetansato.players.BasePlayer import BasePlayer
-# from AlphaBetansato.players.AlphaBetaPlayer import AlphaBetaPlayer
-from AlphaBetansato.players.RandomPlayer import RandomPlayer
+from AlphaBetansato.players.AlphaBetaPlayer import AlphaBetaPlayer
+# from AlphaBetansato.players.RandomPlayer import RandomPlayer
 
 
 ERROR = "[\33[31mERROR\33[0m]:"
@@ -32,8 +32,8 @@ def main():
     asyncio.set_event_loop(loop)
 
     # Playerをランダムとα-β探索から選ぶ。
-    player: BasePlayer = RandomPlayer.create(server_url, loop)
-    # player: BasePlayer = AlphaBetaPlayer.create(server_url, loop)
+    # player: BasePlayer = RandomPlayer.create(server_url, loop)
+    player: BasePlayer = AlphaBetaPlayer.create(server_url, loop)
 
     client = loop.run_until_complete(player)
 
