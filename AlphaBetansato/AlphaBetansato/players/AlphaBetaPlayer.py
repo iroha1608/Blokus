@@ -55,32 +55,39 @@ class AlphaBetaPlayer(BasePlayer):
         my_corners = self._count_corners(board_matrix, my_block)
         ene_corners = self._count_corners(board_matrix, ene_block)
 
+        # 中央寄りブロック(6.5, 6.5)
+        my_center = 0.0
+        ene_center = 0.0
+        for r in range(14):
+            for c in range(14):
+                if board_matrix[r][c] == my_block:
+                    my_center += (14.0 - (abs(r - 6.5) + abs(c - 6.5)))
+                elif board_matrix[r][c] == ene_block:
+                    ene_center += (14.0 - (abs(r - 6.5) + abs(c - 6.5)))
+
         # スコアの計算
-        weight_area = 0.0
+        weight_area = 1.0
         weight_my_corners = 0.0
         weight_ene_corners = 0.0
-        if self.turn < 5:
+        weight_center = 0.0
+        if self.turn < 3:
             weight_area = 1.0
-            weight_my_corners = 2.5
+            weight_my_corners = 1.8
             weight_ene_corners = 2.0
+            weight_center = 0.6
         elif self.turn < 12:
             weight_area = 1.0
-            weight_my_corners = 2.0
+            weight_my_corners = 1.5
             weight_ene_corners = 2.5
+            weight_center = 0.3
         else:
             weight_area = 2.5
             weight_my_corners = 1.0
             weight_ene_corners = 2.0
+            weight_center = 0.0
 
-        my_score = (my_area * weight_area) + (my_corners * weight_my_corners)
-        ene_score = (ene_area * weight_area) + (ene_corners * weight_ene_corners)
-
-        # for row in board_matrix:
-            # for cell in row:
-                # if cell == my_block:
-                    # my_score += 1
-                # elif cell == ene_block:
-                    # ene_score += 1
+        my_score = (my_area * weight_area) + (my_corners * weight_my_corners) + (my_center * weight_center)
+        ene_score = (ene_area * weight_area) + (ene_corners * weight_ene_corners) + (ene_center * weight_center)
 
         return my_score - ene_score
 
@@ -117,21 +124,26 @@ class AlphaBetaPlayer(BasePlayer):
         next_p1_turn = p1_turn + 1 if current_player == 1 else p1_turn
         next_p2_turn = p2_turn + 1 if current_player == 2 else p2_turn
 
-        # 上位10盤面に絞る
+        # ブロック面積の大きい20盤面に絞る
+        combined = list(zip(ok_cases, tmp))
+        combined.sort(key=lambda x: x[1][7].sum(), reverse=True)
+        combined = combined[:40]
+
+        # 盤面コピーと評価
         search_width = 3
         scored_moves = []
-        for move_string, move_data in zip(ok_cases, tmp):
+        for move_string, move_data in combined:
             nb = apply_move(board_matrix, move_data, current_player)
             score = self.rate_board(nb)
             scored_moves.append((score, move_string, move_data))
 
+        # 評価スコアでソート、探索幅をさらに絞る
         scored_moves.sort(key=lambda x: x[0], reverse=is_maximizing)
         ok_cases = [x[1] for x in scored_moves[:search_width]]
         tmp = [x[2] for x in scored_moves[:search_width]]
 
         if is_maximizing:
             max_rate = -math.inf
-
             for move_string, move_data in zip(ok_cases, tmp):
                 new_board = apply_move(board_matrix, move_data, current_player)
                 new_my_hands = [h for h in my_hands if h != move_string[0]]
@@ -199,10 +211,8 @@ class AlphaBetaPlayer(BasePlayer):
                 return 'R399'
 
         depth = 3
-
         alpha = -math.inf
         beta = math.inf
-
         best_hand = ok_cases[0]
         max_rate = -math.inf
 
@@ -213,14 +223,21 @@ class AlphaBetaPlayer(BasePlayer):
         next_p1_turn = p1_turn + 1 if self.player_number == 1 else p1_turn
         next_p2_turn = p2_turn + 1 if self.player_number == 2 else p2_turn
 
-        # 上位10盤面に絞る
-        search_width = 5
+        # ブロック面積の大きい30盤面に絞る
+        # 現在の盤面は少し広めに候補を残す
+        combined = list(zip(ok_cases, tmp))
+        combined.sort(key=lambda x: x[1][7].sum(), reverse=True)
+        combined = combined[:50]
+
+        # 盤面コピーと評価, ルートノードから5手に絞る
+        search_width = 4
         scored_moves = []
-        for move_string, move_data in zip(ok_cases, tmp):
+        for move_string, move_data in combined:
             nb = apply_move(board_matrix, move_data, self.player_number)
             score = self.rate_board(nb)
             scored_moves.append((score, move_string, move_data))
 
+        # 評価スコアでソート、探索幅をさらに絞る
         scored_moves.sort(key=lambda x: x[0], reverse=True)
         ok_cases = [x[1] for x in scored_moves[:search_width]]
         tmp = [x[2] for x in scored_moves[:search_width]]
